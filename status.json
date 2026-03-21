@@ -48,6 +48,7 @@
     },
     "05-distributed-git": {
       "1-distributed-git.asc": 0,
+      "1-distributed-git.asc": 100,
       "sections/contributing.asc": 100,
       "sections/distributed-workflows.asc": 100,
       "sections/maintaining.asc": 100
@@ -73,6 +74,10 @@
       "sections/revision-selection.asc": 100,
       "sections/rewriting-history.asc": 100,
       "sections/searching.asc": 100,
+      "sections/reset.asc": 0,
+      "sections/revision-selection.asc": 100,
+      "sections/rewriting-history.asc": 0,
+      "sections/searching.asc": 0,
       "sections/signing.asc": 0,
       "sections/stashing-cleaning.asc": 100,
       "sections/submodules.asc": 0,
