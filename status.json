@@ -65,6 +65,8 @@
       "1-git-tools.asc": 0,
       "sections/advanced-merging.asc": 0,
       "sections/bundling.asc": 100,
+      "sections/credentials.asc": 100,
+      "sections/debugging.asc": 100,
       "sections/bundling.asc": 0,
       "sections/credentials.asc": 100,
       "sections/debugging.asc": 0,
