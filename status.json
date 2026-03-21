@@ -1,7 +1,9 @@
 {
   "code": "en",
   "language": "English",
-  "maintainers": ["schacon"],
+  "maintainers": [
+    "schacon"
+  ],
   "files": {
     "01-introduction": {
       "1-introduction.asc": 0,
@@ -35,6 +37,7 @@
     "04-git-server": {
       "1-git-server.asc": 100,
       "sections/generating-ssh-key.asc": 100,
+      "sections/generating-ssh-key.asc": 0,
       "sections/git-daemon.asc": 0,
       "sections/git-on-a-server.asc": 100,
       "sections/gitlab.asc": 0,
@@ -42,6 +45,7 @@
       "sections/hosted.asc": 0,
       "sections/protocols.asc": 100,
       "sections/setting-up-server.asc": 100,
+      "sections/setting-up-server.asc": 0,
       "sections/smart-http.asc": 0
     },
     "05-distributed-git": {
