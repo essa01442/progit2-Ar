@@ -6,14 +6,14 @@
   ],
   "files": {
     "01-introduction": {
-      "1-introduction.asc": 0,
-      "sections/about-version-control.asc": 0,
-      "sections/basics.asc": 0,
-      "sections/command-line.asc": 0,
-      "sections/first-time-setup.asc": 0,
-      "sections/help.asc": 0,
-      "sections/history.asc": 0,
-      "sections/installing.asc": 0
+      "1-introduction.asc": 100,
+      "sections/about-version-control.asc": 100,
+      "sections/basics.asc": 100,
+      "sections/command-line.asc": 100,
+      "sections/first-time-setup.asc": 100,
+      "sections/help.asc": 100,
+      "sections/history.asc": 100,
+      "sections/installing.asc": 100
     },
     "02-git-basics": {
       "1-git-basics.asc": 100,
@@ -96,6 +96,7 @@
       "sections/import-svn.asc": 100
     },
     "10-git-internals": {
+      "1-git-internals.asc": 100,
       "1-git-internals.asc": 0,
       "sections/environment.asc": 100,
       "sections/maintenance.asc": 100,
@@ -105,6 +106,9 @@
       "sections/refs.asc": 100,
       "sections/refspec.asc": 100,
       "sections/transfer-protocols.asc": 100
+    },
+    "A-git-in-other-environments": {
+      "1-git-other-environments.asc": 100,
       "1-git-internals.asc": 100,
       "sections/environment.asc": 0,
       "sections/maintenance.asc": 0,
