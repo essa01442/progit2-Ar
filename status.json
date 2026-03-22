@@ -53,7 +53,7 @@
       "sections/maintaining.asc": 100
     },
     "06-github": {
-      "1-github.asc": 0,
+      "1-github.asc": 100,
       "sections/1-setting-up-account.asc": 100,
       "sections/2-contributing.asc": 100,
       "sections/3-maintaining.asc": 100,
@@ -76,10 +76,10 @@
       "sections/stashing-cleaning.asc": 100,
       "sections/submodules.asc": 100,
       "sections/subtree-merges.asc": 100,
-      "1-git-tools.asc": 0
+      "1-git-tools.asc": 100
     },
     "08-customizing-git": {
-      "1-customizing-git.asc": 0,
+      "1-customizing-git.asc": 100,
       "sections/attributes.asc": 100,
       "sections/config.asc": 100,
       "sections/hooks.asc": 100,
@@ -102,7 +102,7 @@
       "sections/import-svn.asc": 10
     },
     "10-git-internals": {
-      "1-git-internals.asc": 0,
+      "1-git-internals.asc": 100,
       "sections/environment.asc": 0,
       "sections/maintenance.asc": 0,
       "sections/objects.asc": 0,
@@ -113,7 +113,7 @@
       "sections/transfer-protocols.asc": 0
     },
     "A-git-in-other-environments": {
-      "1-git-other-environments.asc": 0,
+      "1-git-other-environments.asc": 100,
       "sections/bash.asc": 0,
       "sections/guis.asc": 0,
       "sections/jetbrainsides.asc": 0,
