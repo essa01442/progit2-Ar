@@ -103,7 +103,7 @@
     },
     "10-git-internals": {
       "1-git-internals.asc": 0,
-      "sections/environment.asc": 0,
+      "sections/environment.asc": 100,
       "sections/maintenance.asc": 0,
       "sections/objects.asc": 0,
       "sections/packfiles.asc": 0,
@@ -114,7 +114,7 @@
     },
     "A-git-in-other-environments": {
       "1-git-other-environments.asc": 0,
-      "sections/bash.asc": 0,
+      "sections/bash.asc": 100,
       "sections/guis.asc": 0,
       "sections/jetbrainsides.asc": 0,
       "sections/powershell.asc": 0,
