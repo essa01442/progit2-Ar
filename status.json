@@ -109,6 +109,9 @@
     },
     "A-git-in-other-environments": {
       "1-git-other-environments.asc": 100,
+    },
+    "A-git-in-other-environments": {
+      "1-git-other-environments.asc": 100,
       "1-git-internals.asc": 100,
       "sections/environment.asc": 0,
       "sections/maintenance.asc": 0,
