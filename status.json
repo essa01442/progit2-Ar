@@ -80,24 +80,20 @@
     },
     "08-customizing-git": {
       "1-customizing-git.asc": 0,
-      "sections/attributes.asc": 5,
-      "sections/config.asc": 5,
-      "sections/hooks.asc": 5,
-      "sections/policy.asc": 5
       "sections/attributes.asc": 100,
       "sections/config.asc": 100,
       "sections/hooks.asc": 100,
       "sections/policy.asc": 100
     },
     "09-git-and-other-scms": {
-      "1-git-and-other-scms.asc": 0,
-      "sections/client-hg.asc": 5,
-      "sections/client-p4.asc": 5,
-      "sections/client-svn.asc": 5,
+      "1-git-and-other-scms.asc": 100,
+      "sections/client-hg.asc": 10,
+      "sections/client-p4.asc": 10,
+      "sections/client-svn.asc": 10,
       "sections/import-custom.asc": 5,
-      "sections/import-hg.asc": 5,
+      "sections/import-hg.asc": 10,
       "sections/import-p4.asc": 5,
-      "sections/import-svn.asc": 5
+      "sections/import-svn.asc": 10
     },
     "10-git-internals": {
       "1-git-internals.asc": 0,
