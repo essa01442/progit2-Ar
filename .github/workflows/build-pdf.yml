@@ -28,33 +28,40 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update -qq
+
+        # خطوط عربية
         sudo apt-get install -y \
-          # ── خطوط عربية احترافية ──────────────────
-          fonts-amiri \
+          fonts-hosny-amiri \
           fonts-arabeyes \
           fonts-farsiweb \
-          fonts-hosny-amiri \
           fonts-liberation \
           fonts-dejavu \
           fonts-noto \
           fonts-noto-core \
-          fonts-noto-extra \
-          # ── أدوات PDF ───────────────────────────
+          fontconfig
+
+        # حاول تثبيت حزم اختيارية (قد لا تكون متاحة في كل إصدار)
+        sudo apt-get install -y fonts-noto-extra 2>/dev/null || true
+
+        # أدوات PDF
+        sudo apt-get install -y \
           weasyprint \
           wkhtmltopdf \
-          poppler-utils \
-          # ── Python لمعالجة العربية ───────────────
+          poppler-utils
+
+        # Python
+        sudo apt-get install -y \
           python3-pip \
           python3-bidi \
-          python3-arabic-reshaper \
-          # ── تحديث ذاكرة الخطوط ──────────────────
-          fontconfig
+          python3-arabic-reshaper
+
         sudo fc-cache -f -v
 
     - name: Install Python Arabic libraries
       run: |
-        pip3 install arabic-reshaper python-bidi weasyprint --break-system-packages || \
-        pip3 install arabic-reshaper python-bidi weasyprint
+        pip3 install arabic-reshaper python-bidi weasyprint --break-system-packages 2>/dev/null || \
+        pip3 install arabic-reshaper python-bidi weasyprint 2>/dev/null || \
+        echo "pip install skipped - using system packages"
 
     - name: Install Ruby dependencies
       run: bundle install
