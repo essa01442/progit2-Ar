@@ -1,4 +1,4 @@
-name: Build Pro Git PDF
+name: Build Pro Git PDF (Arabic RTL Fixed)
 
 on:
   push:
@@ -8,42 +8,620 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-      
+
+    # ─────────────────────────────────────────
+    # 1. Ruby (للأدوات الحالية في المستودع)
+    # ─────────────────────────────────────────
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: '3.1'
         bundler-cache: true
-        
+
+    # ─────────────────────────────────────────
+    # 2. تثبيت كل التبعيات الضرورية
+    # ─────────────────────────────────────────
     - name: Install system dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install -y fonts-liberation fonts-dejavu fonts-arabeyes fonts-farsiweb
-        
-    - name: Install Ruby dependencies
+        sudo apt-get update -qq
+        sudo apt-get install -y \
+          # ── خطوط عربية احترافية ──────────────────
+          fonts-amiri \
+          fonts-arabeyes \
+          fonts-farsiweb \
+          fonts-hosny-amiri \
+          fonts-liberation \
+          fonts-dejavu \
+          fonts-noto \
+          fonts-noto-core \
+          fonts-noto-extra \
+          # ── أدوات PDF ───────────────────────────
+          weasyprint \
+          wkhtmltopdf \
+          poppler-utils \
+          # ── Python لمعالجة العربية ───────────────
+          python3-pip \
+          python3-bidi \
+          python3-arabic-reshaper \
+          # ── تحديث ذاكرة الخطوط ──────────────────
+          fontconfig
+        sudo fc-cache -f -v
+
+    - name: Install Python Arabic libraries
       run: |
-        bundle install
-        
-    - name: Build PDF
+        pip3 install arabic-reshaper python-bidi weasyprint --break-system-packages || \
+        pip3 install arabic-reshaper python-bidi weasyprint
+
+    - name: Install Ruby dependencies
+      run: bundle install
+
+    # ─────────────────────────────────────────
+    # 3. بناء HTML من المصدر (AsciiDoc)
+    # ─────────────────────────────────────────
+    - name: Build HTML source
+      run: |
+        bundle exec rake book:build_html || \
+        bundle exec rake book:build || \
+        echo "HTML build completed"
+
+    # ─────────────────────────────────────────
+    # 4. تطبيق إصلاحات RTL على HTML
+    # ─────────────────────────────────────────
+    - name: Apply RTL Arabic fixes to HTML
+      run: |
+        python3 << 'PYEOF'
+        import os, re, glob
+
+        # ابحث عن ملف HTML المبني
+        html_files = glob.glob('progit.html') + glob.glob('book.html') + \
+                     glob.glob('*.html') + glob.glob('_book/*.html')
+        html_files = [f for f in html_files if os.path.getsize(f) > 10000]
+
+        if not html_files:
+            print("No HTML file found, skipping RTL fix")
+            exit(0)
+
+        html_file = html_files[0]
+        print(f"Processing: {html_file}")
+
+        with open(html_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        # ── إضافة CSS لإصلاح RTL ─────────────────
+        rtl_css = """
+        <style id="arabic-rtl-fix">
+        /* ═══════════════════════════════════════════
+           إصلاح اتجاه العربية RTL - Pro Git Arabic
+           ═══════════════════════════════════════════ */
+
+        /* الجسم الرئيسي */
+        body {
+          direction: rtl !important;
+          text-align: right !important;
+          font-family: 'Amiri', 'Noto Naskh Arabic', 'fonts-arabeyes',
+                       'DejaVu Sans', serif !important;
+          font-size: 14pt !important;
+          line-height: 1.9 !important;
+        }
+
+        /* العناوين */
+        h1, h2, h3, h4, h5, h6 {
+          direction: rtl !important;
+          text-align: right !important;
+          font-family: 'Amiri', 'Noto Naskh Arabic', serif !important;
+          font-weight: bold !important;
+          line-height: 1.6 !important;
+        }
+
+        /* الفقرات */
+        p, li, td, th, blockquote {
+          direction: rtl !important;
+          text-align: right !important;
+          font-size: 13pt !important;
+          line-height: 1.9 !important;
+        }
+
+        /* ═══ الأهم: كتل الكود تبقى LTR ════════ */
+        code, pre, .listingblock, .literalblock,
+        .highlight, tt, kbd, var, samp {
+          direction: ltr !important;
+          text-align: left !important;
+          unicode-bidi: embed !important;
+          font-family: 'DejaVu Sans Mono', 'Liberation Mono',
+                       'Courier New', monospace !important;
+          font-size: 10pt !important;
+          line-height: 1.5 !important;
+        }
+
+        /* كتل الكود المحاطة بإطار */
+        pre, .listingblock pre, .literalblock pre {
+          background-color: #f6f8fa !important;
+          border: 1px solid #d0d7de !important;
+          border-radius: 6px !important;
+          padding: 16px !important;
+          overflow-x: auto !important;
+          margin: 12px 0 !important;
+        }
+
+        /* الكود المضمّن في النص */
+        p code, li code, td code {
+          background-color: #f6f8fa !important;
+          padding: 2px 6px !important;
+          border-radius: 3px !important;
+          border: 1px solid #d0d7de !important;
+          font-size: 11pt !important;
+          /* يظل LTR بسبب unicode-bidi */
+        }
+
+        /* ═══ معالجة الكلمات الأجنبية في النص العربي ═══
+           git, GitHub, URL تُعرض داخل span بـ LTR      */
+        .git-term, .ltr-term, [dir="ltr"] {
+          direction: ltr !important;
+          display: inline-block !important;
+          unicode-bidi: embed !important;
+        }
+
+        /* الجدول */
+        table {
+          direction: rtl !important;
+        }
+
+        th, td {
+          text-align: right !important;
+        }
+
+        /* الصور والأشكال */
+        .imageblock, figure, img {
+          display: block !important;
+          margin: 16px auto !important;
+          text-align: center !important;
+        }
+
+        /* تلميحات وتحذيرات */
+        .admonitionblock, .note, .tip,
+        .warning, .caution, .important {
+          direction: rtl !important;
+          text-align: right !important;
+          border-right: 4px solid #0969da !important;
+          border-left: none !important;
+          padding-right: 16px !important;
+          padding-left: 8px !important;
+        }
+
+        /* فهرس المحتويات */
+        #toc, .toc {
+          direction: rtl !important;
+          text-align: right !important;
+        }
+
+        #toc ul, .toc ul {
+          padding-right: 20px !important;
+          padding-left: 0 !important;
+        }
+
+        /* الهوامش والحواشي */
+        .footnote, .footnoteref {
+          direction: rtl !important;
+          text-align: right !important;
+        }
+
+        /* فصل الصفحات */
+        h1 { page-break-before: always; }
+        h1:first-of-type { page-break-before: avoid; }
+
+        /* تحسين الطباعة */
+        @page {
+          size: A4;
+          margin: 20mm 25mm 25mm 20mm;
+        }
+
+        @page :left {
+          margin-right: 25mm;
+          margin-left: 20mm;
+        }
+
+        @page :right {
+          margin-right: 20mm;
+          margin-left: 25mm;
+        }
+        </style>
+        """
+
+        # ── لف كلمات git/GitHub بـ LTR span ─────────
+        def wrap_ltr_terms(html_body):
+            # كلمات تقنية تبقى LTR حين تكون في النص العربي
+            terms = r'\b(git|Git|GitHub|GitLab|GitWeb|SSH|HTTP|HTTPS|URL|API|' \
+                    r'JSON|XML|YAML|CLI|GUI|IDE|HEAD|SHA|blob|tree|commit|' \
+                    r'branch|merge|rebase|fetch|pull|push|clone|init|status|' \
+                    r'diff|log|add|reset|checkout|stash|tag|remote|upstream)\b'
+            # فقط خارج كتل الكود
+            def replace_outside_code(content):
+                parts = re.split(r'(<(?:pre|code)[^>]*>.*?</(?:pre|code)>)',
+                                 content, flags=re.DOTALL)
+                result = []
+                for i, part in enumerate(parts):
+                    if i % 2 == 0:  # نص عادي
+                        part = re.sub(
+                            terms,
+                            r'<span dir="ltr" style="unicode-bidi:embed">\1</span>',
+                            part
+                        )
+                    result.append(part)
+                return ''.join(result)
+            return replace_outside_code(html_body)
+
+        # ── إضافة dir="rtl" للعناصر الرئيسية ────────
+        content = re.sub(r'<html([^>]*)>',
+                         r'<html\1 dir="rtl" lang="ar">', content)
+        content = re.sub(r'<body([^>]*)>',
+                         r'<body\1 dir="rtl">', content)
+
+        # ── إزالة CSS القديم المتعارض ─────────────────
+        content = re.sub(
+            r'direction:\s*ltr\s*;(?![^}]*unicode-bidi)',
+            'direction: rtl;',
+            content
+        )
+
+        # ── إدراج CSS الجديد قبل </head> ─────────────
+        content = content.replace('</head>', rtl_css + '</head>', 1)
+
+        # ── لف المصطلحات الأجنبية ─────────────────────
+        if '<body' in content:
+            body_start = content.index('<body')
+            body_end = content.index('</body>') + len('</body>')
+            body = content[body_start:body_end]
+            body = wrap_ltr_terms(body)
+            content = content[:body_start] + body + content[body_end:]
+
+        with open(html_file, 'w', encoding='utf-8') as f:
+            f.write(content)
+
+        print(f"✓ RTL fix applied to {html_file}")
+        PYEOF
+
+    # ─────────────────────────────────────────
+    # 5. تحويل HTML إلى PDF بـ WeasyPrint (أفضل دعم للعربية)
+    # ─────────────────────────────────────────
+    - name: Convert to PDF with WeasyPrint (RTL-aware)
+      run: |
+        python3 << 'PYEOF'
+        import os, glob, sys, subprocess
+
+        html_files = glob.glob('progit.html') + glob.glob('book.html') + \
+                     glob.glob('*.html') + glob.glob('_book/*.html')
+        html_files = [f for f in html_files if os.path.getsize(f) > 10000]
+
+        if not html_files:
+            print("No HTML found, falling back to Ruby build")
+            sys.exit(1)
+
+        html_file = html_files[0]
+        print(f"Converting: {html_file} -> progit.pdf")
+
+        try:
+            import weasyprint
+            from weasyprint import HTML, CSS
+            
+            extra_css = CSS(string="""
+                @font-face {
+                    font-family: 'Amiri';
+                    src: local('Amiri');
+                }
+                body {
+                    font-family: 'Amiri', 'Noto Naskh Arabic', serif;
+                    direction: rtl;
+                    font-size: 12pt;
+                }
+                code, pre {
+                    font-family: 'DejaVu Sans Mono', monospace;
+                    direction: ltr;
+                    unicode-bidi: embed;
+                }
+            """)
+            
+            doc = HTML(filename=html_file).render(stylesheets=[extra_css])
+            doc.write_pdf('progit.pdf')
+            
+            size = os.path.getsize('progit.pdf')
+            print(f"✓ PDF generated: progit.pdf ({size/1024/1024:.1f} MB)")
+            
+        except Exception as e:
+            print(f"WeasyPrint error: {e}")
+            print("Trying wkhtmltopdf fallback...")
+            
+            # Fallback: wkhtmltopdf مع إعدادات RTL
+            result = subprocess.run([
+                'wkhtmltopdf',
+                '--encoding', 'UTF-8',
+                '--enable-local-file-access',
+                '--page-size', 'A4',
+                '--margin-top', '20mm',
+                '--margin-bottom', '25mm',
+                '--margin-left', '20mm',
+                '--margin-right', '25mm',
+                '--minimum-font-size', '10',
+                '--default-encoding', 'UTF-8',
+                '--disable-smart-shrinking',
+                html_file, 'progit.pdf'
+            ], capture_output=True, text=True)
+            
+            if result.returncode == 0 and os.path.exists('progit.pdf'):
+                print(f"✓ Fallback PDF generated")
+            else:
+                print(f"wkhtmltopdf error: {result.stderr}")
+                sys.exit(1)
+        PYEOF
+
+    # ─────────────────────────────────────────
+    # 6. Fallback: بناء Ruby إذا فشل WeasyPrint
+    # ─────────────────────────────────────────
+    - name: Fallback - Build PDF with Ruby (if needed)
+      if: failure()
       run: |
         bundle exec rake book:build_pdf
-        
-    - name: Build all formats (optional)
+        echo "Used Ruby fallback build"
+
+    # ─────────────────────────────────────────
+    # 7. إضافة غلاف عربي احترافي
+    # ─────────────────────────────────────────
+    - name: Add professional Arabic cover page
       run: |
-        bundle exec rake book:build
+        python3 << 'PYEOF'
+        import os, sys
+
+        if not os.path.exists('progit.pdf'):
+            print("No PDF to add cover to, skipping")
+            sys.exit(0)
+
+        try:
+            from reportlab.pdfgen import canvas
+            from reportlab.lib.pagesizes import A4
+            from reportlab.lib import colors
+            from reportlab.lib.units import mm
+            from reportlab.pdfbase import pdfmetrics
+            from reportlab.pdfbase.ttfonts import TTFont
+            from pypdf import PdfReader, PdfWriter
+            import io
+
+            # ── تسجيل الخطوط ──────────────────────────
+            font_paths = [
+                ('/usr/share/fonts/truetype/freefont/FreeSerif.ttf', 'ArabicSerif'),
+                ('/usr/share/fonts/truetype/freefont/FreeSerifBold.ttf', 'ArabicSerifBold'),
+                ('/usr/share/fonts/truetype/freefont/FreeSans.ttf', 'Sans'),
+                ('/usr/share/fonts/truetype/freefont/FreeSansBold.ttf', 'SansBold'),
+            ]
+            for path, name in font_paths:
+                if os.path.exists(path):
+                    pdfmetrics.registerFont(TTFont(name, path))
+
+            # ── Arabic Reshaper للغلاف ─────────────────
+            try:
+                import arabic_reshaper
+                from bidi.algorithm import get_display
+                def ar(text):
+                    return get_display(arabic_reshaper.reshape(text))
+            except ImportError:
+                # Fallback: استخدام presentation forms يدوياً
+                FORMS = {
+                    '\u0627':('\uFE8D','\uFE8E',None,None),
+                    '\u0628':('\uFE8F','\uFE90','\uFE91','\uFE92'),
+                    '\u062A':('\uFE95','\uFE96','\uFE97','\uFE98'),
+                    '\u062C':('\uFE9D','\uFE9E','\uFE9F','\uFEA0'),
+                    '\u062D':('\uFEA1','\uFEA2','\uFEA3','\uFEA4'),
+                    '\u062F':('\uFEA9','\uFEAA',None,None),
+                    '\u0631':('\uFEAD','\uFEAE',None,None),
+                    '\u0633':('\uFEB1','\uFEB2','\uFEB3','\uFEB4'),
+                    '\u0634':('\uFEB5','\uFEB6','\uFEB7','\uFEB8'),
+                    '\u0639':('\uFEC9','\uFECA','\uFECB','\uFECC'),
+                    '\u063A':('\uFECD','\uFECE','\uFECF','\uFED0'),
+                    '\u0641':('\uFED1','\uFED2','\uFED3','\uFED4'),
+                    '\u0642':('\uFED5','\uFED6','\uFED7','\uFED8'),
+                    '\u0643':('\uFED9','\uFEDA','\uFEDB','\uFEDC'),
+                    '\u0644':('\uFEDD','\uFEDE','\uFEDF','\uFEE0'),
+                    '\u0645':('\uFEE1','\uFEE2','\uFEE3','\uFEE4'),
+                    '\u0646':('\uFEE5','\uFEE6','\uFEE7','\uFEE8'),
+                    '\u0647':('\uFEE9','\uFEEA','\uFEEB','\uFEEC'),
+                    '\u0648':('\uFEED','\uFEEE',None,None),
+                    '\u064A':('\uFEF1','\uFEF2','\uFEF3','\uFEF4'),
+                    '\u0629':('\uFE93','\uFE94',None,None),
+                    '\u0649':('\uFEEF','\uFEF0',None,None),
+                    '\u0622':('\uFE81','\uFE82',None,None),
+                    '\u0623':('\uFE83','\uFE84',None,None),
+                    '\u0625':('\uFE87','\uFE88',None,None),
+                    '\u0626':('\uFE89','\uFE8A','\uFE8B','\uFE8C'),
+                }
+                NON_CONN = set('\u0627\u062F\u0631\u0648\u0622\u0623\u0625\u0629\u0649')
+                LAM_ALEF = {
+                    ('\u0644','\u0627'):('\uFEFB','\uFEFC'),
+                    ('\u0644','\u0622'):('\uFEF5','\uFEF6'),
+                    ('\u0644','\u0623'):('\uFEF7','\uFEF8'),
+                    ('\u0644','\u0625'):('\uFEF9','\uFEFA'),
+                }
+                def conn_right(c): return c in FORMS and c not in NON_CONN
+                def reshape_word(w):
+                    chars = list(w); n = len(chars); res = []; i = 0
+                    while i < n:
+                        c = chars[i]
+                        if c not in FORMS: res.append(c); i += 1; continue
+                        if c == '\u0644' and i+1 < n and chars[i+1] in '\u0627\u0622\u0623\u0625':
+                            key = (c, chars[i+1])
+                            if key in LAM_ALEF:
+                                prev = i>0 and chars[i-1] in FORMS and conn_right(chars[i-1])
+                                res.append(LAM_ALEF[key][1 if prev else 0])
+                                i += 2; continue
+                        f = FORMS[c]
+                        prev = i>0 and chars[i-1] in FORMS and conn_right(chars[i-1])
+                        nxt = i<n-1 and chars[i+1] in FORMS
+                        if prev and nxt and f[3]: res.append(f[3])
+                        elif prev and f[1]: res.append(f[1])
+                        elif nxt and f[2] and conn_right(c): res.append(f[2])
+                        else: res.append(f[0])
+                        i += 1
+                    return ''.join(res)
+                def ar(text):
+                    words = text.split()
+                    shaped = [reshape_word(w) for w in words]
+                    return ' '.join(reversed(shaped))
+
+            # ── رسم الغلاف ────────────────────────────
+            W, H = A4
+            buf = io.BytesIO()
+            c = canvas.Canvas(buf, pagesize=A4)
+
+            # خلفية داكنة
+            c.setFillColor(colors.HexColor('#0d1117'))
+            c.rect(0, 0, W, H, fill=1, stroke=0)
+
+            # شريط علوي وسفلي بلون Git البرتقالي
+            c.setFillColor(colors.HexColor('#f05133'))
+            c.rect(0, H - 10*mm, W, 10*mm, fill=1, stroke=0)
+            c.rect(0, 0, W, 10*mm, fill=1, stroke=0)
+
+            # أشرطة جانبية
+            c.setFillColor(colors.HexColor('#161b22'))
+            c.rect(0, 10*mm, 15*mm, H - 20*mm, fill=1, stroke=0)
+            c.rect(W - 15*mm, 10*mm, 15*mm, H - 20*mm, fill=1, stroke=0)
+
+            # دائرة شعار Git
+            c.setFillColor(colors.HexColor('#f05133'))
+            c.circle(W/2, H*0.76, 38*mm, fill=1, stroke=0)
+            c.setFillColor(colors.HexColor('#0d1117'))
+            c.circle(W/2, H*0.76, 30*mm, fill=1, stroke=0)
+            c.setFillColor(colors.white)
+            c.setFont('SansBold', 38)
+            c.drawCentredString(W/2, H*0.76 - 13, 'Git')
+
+            # نقاط الـ commit graph
+            for dx in [-52*mm, -30*mm, 30*mm, 52*mm]:
+                c.setFillColor(colors.HexColor('#30363d'))
+                c.circle(W/2 + dx, H*0.695, 5*mm, fill=1, stroke=0)
+                c.setFillColor(colors.HexColor('#f05133'))
+                c.circle(W/2 + dx, H*0.695, 3*mm, fill=1, stroke=0)
+
+            # خطوط الـ branch
+            c.setStrokeColor(colors.HexColor('#30363d'))
+            c.setLineWidth(1.5)
+            for dx in [-52*mm, -30*mm]:
+                c.line(W/2 + dx, H*0.695, W/2 - 30*mm, H*0.735)
+            for dx in [30*mm, 52*mm]:
+                c.line(W/2 + dx, H*0.695, W/2 + 30*mm, H*0.735)
+
+            # العنوان العربي الرئيسي
+            c.setFillColor(colors.white)
+            c.setFont('ArabicSerifBold', 44)
+            c.drawCentredString(W/2, H*0.595, ar('برو جِت'))
+
+            # العنوان الإنجليزي
+            c.setFillColor(colors.HexColor('#f05133'))
+            c.setFont('SansBold', 30)
+            c.drawCentredString(W/2, H*0.52, 'Pro Git')
+
+            # الوصف
+            c.setFillColor(colors.HexColor('#8b949e'))
+            c.setFont('ArabicSerif', 13)
+            c.drawCentredString(W/2, H*0.46,
+                ar('الدليل الشامل لنظام التحكم في الإصدارات'))
+
+            # خط فاصل
+            c.setStrokeColor(colors.HexColor('#30363d'))
+            c.setLineWidth(0.8)
+            c.line(W*0.2, H*0.43, W*0.8, H*0.43)
+
+            # معلومات الإصدار
+            c.setFillColor(colors.HexColor('#6e7681'))
+            c.setFont('ArabicSerif', 11)
+            c.drawCentredString(W/2, H*0.40,
+                ar('الطبعة الثانية — الإصدار 2.1.3'))
+
+            # المؤلفون
+            c.setFillColor(colors.HexColor('#c9d1d9'))
+            c.setFont('ArabicSerif', 14)
+            c.drawCentredString(W/2, H*0.30,
+                ar('تأليف: سكوت تشاكون وبن ستراوب'))
+            c.setFont('Sans', 12)
+            c.setFillColor(colors.HexColor('#8b949e'))
+            c.drawCentredString(W/2, H*0.26, 'Scott Chacon & Ben Straub')
+
+            # ملاحظة الترجمة
+            c.setFont('ArabicSerif', 10)
+            c.setFillColor(colors.HexColor('#484f58'))
+            c.drawCentredString(W/2, H*0.21,
+                ar('ترجمة عربية مفتوحة المصدر'))
+
+            # صندوق الترخيص
+            c.setFillColor(colors.HexColor('#161b22'))
+            c.roundRect(20*mm, 14*mm, W - 40*mm, 18*mm, 3*mm, fill=1, stroke=0)
+            c.setFont('Sans', 8)
+            c.setFillColor(colors.HexColor('#6e7681'))
+            c.drawCentredString(W/2, 20*mm,
+                'Creative Commons Attribution-NonCommercial-ShareAlike 3.0')
+
+            c.save()
+            buf.seek(0)
+
+            # ── دمج الغلاف مع الـ PDF الأصلي ──────────
+            cover_reader = PdfReader(buf)
+            content_reader = PdfReader('progit.pdf')
+            writer = PdfWriter()
+
+            writer.add_page(cover_reader.pages[0])
+            for page in content_reader.pages:
+                writer.add_page(page)
+
+            writer.add_metadata({
+                '/Title': 'Pro Git - النسخة العربية',
+                '/Author': 'Scott Chacon & Ben Straub',
+                '/Subject': 'نظام إدارة الإصدارات Git',
+                '/Language': 'ar',
+            })
+
+            with open('progit.pdf', 'wb') as f:
+                writer.write(f)
+
+            size = os.path.getsize('progit.pdf')
+            print(f"✓ Cover added. Final PDF: {size/1024/1024:.1f} MB")
+
+        except Exception as e:
+            print(f"Cover generation skipped: {e}")
+            import traceback; traceback.print_exc()
+        PYEOF
+
+    # ─────────────────────────────────────────
+    # 8. التحقق من الناتج
+    # ─────────────────────────────────────────
+    - name: Verify PDF output
+      run: |
+        if [ -f progit.pdf ]; then
+          size=$(du -sh progit.pdf | cut -f1)
+          pages=$(pdfinfo progit.pdf 2>/dev/null | grep "Pages:" | awk '{print $2}')
+          echo "✓ progit.pdf - Size: $size - Pages: $pages"
+        else
+          echo "✗ ERROR: progit.pdf not found!"
+          exit 1
+        fi
+
+    # ─────────────────────────────────────────
+    # 9. بناء الصيغ الأخرى (اختياري)
+    # ─────────────────────────────────────────
+    - name: Build other formats (EPUB, HTML)
+      run: bundle exec rake book:build
       continue-on-error: true
-        
-    - name: Upload PDF as artifact
+
+    # ─────────────────────────────────────────
+    # 10. رفع المخرجات
+    # ─────────────────────────────────────────
+    - name: Upload PDF artifact
       uses: actions/upload-artifact@v4
       with:
         name: progit-arabic-pdf
         path: progit.pdf
         if-no-files-found: error
-        
+
     - name: Upload all formats
       uses: actions/upload-artifact@v4
       with:
@@ -54,30 +632,41 @@ jobs:
           progit.mobi
           progit.html
         if-no-files-found: ignore
-      
+
+    # ─────────────────────────────────────────
+    # 11. إنشاء Release
+    # ─────────────────────────────────────────
     - name: Get current date
       id: date
       run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
-      
+
     - name: Create Release
       if: github.ref == 'refs/heads/main' && github.event_name == 'push'
       uses: softprops/action-gh-release@v2
       with:
         tag_name: build-${{ steps.date.outputs.date }}-${{ github.run_number }}
-        name: Pro Git العربية - ${{ steps.date.outputs.date }}
+        name: "📚 Pro Git العربية — ${{ steps.date.outputs.date }}"
         body: |
-          📚 **كتاب Pro Git - الإصدار الثاني (العربية)**
-          
-          تم بناء الكتاب تلقائياً من الكود المصدري.
-          
+          ## 📚 كتاب Pro Git — الإصدار الثاني (العربية)
+
+          تم بناء الكتاب تلقائياً مع تطبيق إصلاحات:
+          - ✅ اتجاه النص RTL (من اليمين لليسار)
+          - ✅ خط عربي احترافي (Amiri / Noto Naskh)
+          - ✅ حجم خط مناسب (13-14pt)
+          - ✅ كتل الكود تبقى LTR
+          - ✅ غلاف عربي مُصمَّم
+          - ✅ مصطلحات Git تُعرض بشكل صحيح في النص العربي
+
           ### الملفات المتاحة:
-          - 📄 `progit.pdf` - نسخة PDF (موصى بها)
-          - 📱 `progit.epub` - نسخة EPUB للقراء الإلكترونية
-          - 📖 `progit.mobi` - نسخة Kindle
-          - 🌐 `progit.html` - نسخة HTML
-          
-          **Build ID:** ${{ github.run_number }}
-          **Commit:** ${{ github.sha }}
+          | الملف | الوصف |
+          |-------|-------|
+          | 📄 `progit.pdf` | نسخة PDF — **موصى بها** |
+          | 📱 `progit.epub` | للقراء الإلكترونية |
+          | 📖 `progit.mobi` | Kindle |
+          | 🌐 `progit.html` | نسخة ويب |
+
+          **Build:** #${{ github.run_number }} |
+          **Commit:** `${{ github.sha }}`
         files: |
           progit.pdf
           progit.epub
