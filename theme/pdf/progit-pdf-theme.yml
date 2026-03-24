@@ -1,0 +1,41 @@
+# Asciidoctor PDF theme for Pro Git Arabic (RTL) edition
+# Adds proper RTL text direction and Arabic font support
+
+extends: default
+
+base:
+  text_align: right
+  font_family: NotoSerif
+
+prose:
+  text_align: right
+
+heading:
+  text_align: right
+
+toc:
+  text_align: right
+
+header:
+  recto:
+    left:
+      content: '{page-number}'
+    right:
+      content: '{doctitle}'
+  verso:
+    left:
+      content: '{doctitle}'
+    right:
+      content: '{page-number}'
+
+footer:
+  recto:
+    left:
+      content: '{page-number}'
+  verso:
+    right:
+      content: '{page-number}'
+
+page:
+  layout: portrait
+  margin: [20mm, 20mm, 20mm, 20mm]

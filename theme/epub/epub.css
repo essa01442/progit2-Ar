@@ -92,3 +92,21 @@ pre[data-code-language="console"] code.gp {
   color: #009900;
   font-weight: bold;
 }
+
+/* Arabic RTL support */
+body {
+  direction: rtl;
+  unicode-bidi: embed;
+}
+
+pre, code, kbd, samp, tt {
+  direction: ltr;
+  unicode-bidi: embed;
+  text-align: left;
+}
+
+.listingblock pre, .literalblock pre {
+  direction: ltr;
+  unicode-bidi: embed;
+  text-align: left;
+}
